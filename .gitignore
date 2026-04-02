@@ -1,0 +1,22 @@
+# Data directories
+data/
+thesis_data/
+data_cw/
+data_large_sweep/
+data_n_34/
+
+# HDF5 files
+*.h5
+
+# Python cache
+__pycache__/
+
+# IDE
+.vscode/
+
+# Paraview exports
+paraview_simple_test/
+paraview_vtk_test/
+
+# Colormap data
+colormap/

@@ -7,6 +7,15 @@ import os
 import h5py
 from datetime import datetime
 
+from mpi4py import MPI
+import h5py
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+
+
+
 c0 = 299792458  # m/s
 um_scale = 1e-6  # 1 µm in m
 
@@ -68,8 +77,8 @@ df = df_thz * um_scale * 1e12 / c0  # convert to Meep freq (1/um)
 #df = fmax - fmin
 
 nfreq = 2000
-resolution = 20  # pixels/um
-field_decay = 1e-3  # field decay for stopping condition
+resolution = 10  # pixels/um
+field_decay = 1e-2  # field decay for stopping condition
 
 sources = [mp.Source(mp.GaussianSource(frequency=f_cen, fwidth=df),
                      component=mp.Ez,
@@ -154,31 +163,35 @@ print(f"Parameters saved to {params_path}")
 # -----------------------------
 # Save flux data
 # -----------------------------
-flux_path = os.path.join(run_dir, "flux_data.h5")
-
-with h5py.File(flux_path, "w") as f:
-    f.create_dataset("frequency", data=frequencies)
-    f.create_dataset("flux_bus", data=flux_bus)
-    f.create_dataset("flux_drop", data=flux_drop)
-
-print(f"Flux data saved to {flux_path}")
 
 
-# -----------------------------
-# Save field data (Ez and epsilon)
-# -----------------------------
-# Get Ez and epsilon arrays from the final simulation state
-ez_field = sim.get_array(center=mp.Vector3(), size=cell, component=mp.Ez)
-eps_data = sim.get_epsilon()
+if rank == 0:
 
-ez_path = os.path.join(run_dir, "Ez_field.npy")
-eps_path = os.path.join(run_dir, "epsilon.npy")
+    flux_path = os.path.join(run_dir, "flux_data.h5")
 
-np.save(ez_path, ez_field)
-np.save(eps_path, eps_data)
+    with h5py.File(flux_path, "w") as f:
+        f.create_dataset("frequency", data=frequencies)
+        f.create_dataset("flux_bus", data=flux_bus)
+        f.create_dataset("flux_drop", data=flux_drop)
 
-print(f"Ez field saved to {ez_path}")
-print(f"Epsilon field saved to {eps_path}")
+    print(f"Flux data saved to {flux_path}")
+
+
+    # -----------------------------
+    # Save field data (Ez and epsilon)
+    # -----------------------------
+    # Get Ez and epsilon arrays from the final simulation state
+    ez_field = sim.get_array(center=mp.Vector3(), size=cell, component=mp.Ez)
+    eps_data = sim.get_epsilon()
+
+    ez_path = os.path.join(run_dir, "Ez_field.npy")
+    eps_path = os.path.join(run_dir, "epsilon.npy")
+
+    np.save(ez_path, ez_field)
+    np.save(eps_path, eps_data)
+
+    print(f"Ez field saved to {ez_path}")
+    print(f"Epsilon field saved to {eps_path}")
 
 
 

@@ -2,7 +2,7 @@ import meep as mp
 import numpy as np
 import os, math, time
 from datetime import datetime
-import matplotlib.pyplot as plt
+from meep_utils import arc_prism
 
 from mpi4py import MPI
 import h5py
@@ -38,7 +38,7 @@ fcen = f_thz * um_scale * 1e12 / c0
 df_thz = 20
 fwidth = df_thz * um_scale * 1e12 / c0
 nfreq = 30000
-field_decay = 1e-3
+field_decay = 5e-4
 resolution = 48
 theta = np.pi/4  # tuner angle extent
 
@@ -51,19 +51,7 @@ sources = [mp.Source(mp.GaussianSource(fcen, fwidth=fwidth),
                      center=src_center,
                      size=mp.Vector3(0, wg_width, 0))]
 
-tw = 0.08  # tuner width
-
-
-# -----------------------------------
-# Helper for curved tuner
-# -----------------------------------
-def arc_prism(radius, width, angle_start, angle_end, npoints, material=gaas):
-    r_in = radius
-    r_out = radius + width
-    outer = [mp.Vector3(r_out*np.cos(a), r_out*np.sin(a)) for a in np.linspace(angle_start, angle_end, npoints)]
-    inner = [mp.Vector3(r_in*np.cos(a), r_in*np.sin(a)) for a in np.linspace(angle_end, angle_start, npoints)]
-    vertices = outer + inner
-    return mp.Prism(vertices=vertices, height=mp.inf, material=material)
+tuner_widths = [0.05, 0.06, 0.07, 0.08, 0.09, 0.1]  # sweep over tuner widths
 
 
 # -----------------------------------
@@ -105,10 +93,10 @@ norm_flux_region = mp.FluxRegion(center=mp.Vector3(wg_length/2 - 1.5, disk_radiu
 # Sweep over tuner widths
 # -----------------------------------
 
-for theta in [np.pi/4]:
+theta = np.pi / 4
+for tw in tuner_widths:
 
-    gap_tunes = [0.005, 0.010, 0.020, 0.040]
-    #gap_tunes = [0.014, 0.016]
+    gap_tunes = [0.07, 0.1]
 
     # Run normalization ONCE and save
     if rank == 0:
